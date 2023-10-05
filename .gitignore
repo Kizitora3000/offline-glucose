@@ -127,8 +127,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-./Models
-./Replays
+Models/
+Replays/
 
 # Spyder project settings
 .spyderproject
