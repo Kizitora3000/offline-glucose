@@ -79,15 +79,23 @@ full_replay = fill_replay_split(
 # TRAIN THE MODEL ---------------------------
 
 from utils import get_params
-from BCQ import bcq
+from CQL import cql
+# from BCQ import bcq
 # from TD3_BC import td3_bc
 
 # Initialise the agent
+agent = cql(
+    init_seed=0,
+    patient_params=patient_params,
+    params=params
+)
+"""
 agent = bcq(
     init_seed=0,
     patient_params=patient_params,
     params=params
 )
+"""
 """
 agent = td3_bc(
     init_seed=0,
@@ -102,15 +110,23 @@ agent.train_model()
 # TEST THE MODEL ---------------------------
 
 from utils import get_params
+from CQL import cql
 from BCQ import bcq
 # from TD3_BC import td3_bc
 
-# Initialise the agent
+# Initialise the agent]
+agent = cql(
+    init_seed=0,
+    patient_params=patient_params,
+    params=params
+)
+"""
 agent = bcq(
     init_seed=0,
     patient_params=patient_params,
     params=params
 )
+"""
 """
 agent = td3_bc(
     init_seed=0,
