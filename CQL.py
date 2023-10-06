@@ -344,13 +344,18 @@ class cql:
         # load the replay buffer
         with open("./Replays/" + self.replay_name + ".txt", "rb") as file:
             trajectories = pickle.load(file)    
-        
+
         # Process the replay --------------------------------------------------
         
         # unpackage the replay
         self.memory, self.state_mean, self.state_std, self.action_mean, self.action_std, _, _ = unpackage_replay(
             trajectories=trajectories, empty_replay=self.memory, data_processing=self.data_processing, sequence_length=self.sequence_length
         )
+        
+        print(self.memory[0])
+        print(self.memory[1])
+        exit()
+        
         
         # update the parameters
         self.action_std = 1.75 * self.bas * 0.25 / (self.action_std / self.bas)
