@@ -1,13 +1,3 @@
-import os
-
-directory_path1 = './Replays'
-if not os.path.exists(directory_path1):
-    os.makedirs(directory_path1)
-
-directory_path2 = './Models'
-if not os.path.exists(directory_path2):
-    os.makedirs(directory_path2)
-
 # INITIALISE THE ENVIRONMENT ----------------------
 
 import numpy as np
@@ -56,32 +46,15 @@ params = {
     "rnn": None
 }
 
-# COLLECT THE DATA --------------------------------
+import torch
+if torch.cuda.is_available():
+    params["device"] = "cuda"
 
-from utils import fill_replay_split
-
-import gym
-
-# initialise the environment
-env = gym.make(patient_params["env_name"])
-
-# Fill the replay
-full_replay = fill_replay_split(
-    env=env, 
-    replay_name=patient_params["replay_name"],
-    data_split=0.0,
-    noise=True,
-    bolus_noise=0.1,
-    seed=0,
-    params=params
-)
 
 # TRAIN THE MODEL ---------------------------
 
 from utils import get_params
 from CQL import cql
-# from BCQ import bcq
-# from TD3_BC import td3_bc
 
 # Initialise the agent
 agent = cql(
@@ -89,20 +62,6 @@ agent = cql(
     patient_params=patient_params,
     params=params
 )
-"""
-agent = bcq(
-    init_seed=0,
-    patient_params=patient_params,
-    params=params
-)
-"""
-"""
-agent = td3_bc(
-    init_seed=0,
-    patient_params=patient_params,
-    params=params
-)
-"""
 
 # Train the agent
 agent.train_model()
@@ -111,8 +70,6 @@ agent.train_model()
 
 from utils import get_params
 from CQL import cql
-from BCQ import bcq
-# from TD3_BC import td3_bc
 
 # Initialise the agent]
 agent = cql(
@@ -120,20 +77,6 @@ agent = cql(
     patient_params=patient_params,
     params=params
 )
-"""
-agent = bcq(
-    init_seed=0,
-    patient_params=patient_params,
-    params=params
-)
-"""
-"""
-agent = td3_bc(
-    init_seed=0,
-    patient_params=patient_params,
-    params=params
-)
-"""
 
 # Train the agent
 agent.test_model()
