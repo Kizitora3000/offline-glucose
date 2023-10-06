@@ -5,6 +5,7 @@ Created on Sat Apr  2 13:36:04 2022
 
 """
 
+import os
 import numpy as np 
 import copy, random, torch, gym, pickle
 import torch.nn as nn
@@ -289,6 +290,20 @@ class cql:
     Save the learned models.
     """
     def save_model(self):
+        base_dir = './Models/' + self.folder_name
+        seed_dir = os.path.join(base_dir, "Seed" + str(self.train_seed))
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
+        if not os.path.exists(seed_dir):
+            os.makedirs(seed_dir)
+
+        torch.save(self.policy.state_dict(), './Models/' + self.folder_name + "/" + "Seed" +
+                   str(self.train_seed) + "/" + 'CQL_weights_policy')
+        torch.save(self.qf1.state_dict(), './Models/' + self.folder_name + "/" + "Seed" +
+                   str(self.train_seed) + "/" + 'CQL_weights_qf1')
+        torch.save(self.qf2.state_dict(), './Models/' + self.folder_name + "/" + "Seed" +
+                   str(self.train_seed) + "/" + 'CQL_weights_qf2')
+
         torch.save(self.policy.state_dict(), './Models/'  + str(self.env_name) + str(self.train_seed) + 'CQL_weights_policy')
         torch.save(self.qf1.state_dict(), './Models/' + str(self.env_name) + str(self.train_seed) + 'CQL_weights_qf1')
         torch.save(self.qf2.state_dict(), './Models/' + str(self.env_name) + str(self.train_seed) + 'CQL_weights_qf2')
