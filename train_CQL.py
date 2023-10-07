@@ -54,7 +54,7 @@ if torch.cuda.is_available():
 # TRAIN THE MODEL ---------------------------
 
 from utils import get_params
-from CQL import cql
+from RL_models.CQL import cql
 
 # Initialise the agent
 agent = cql(
@@ -69,7 +69,7 @@ agent.train_model()
 # TEST THE MODEL ---------------------------
 
 from utils import get_params
-from CQL import cql
+from RL_models.CQL import cql
 
 # Initialise the agent]
 agent = cql(

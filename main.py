@@ -79,9 +79,9 @@ full_replay = fill_replay_split(
 # TRAIN THE MODEL ---------------------------
 
 from utils import get_params
-from CQL import cql
-# from BCQ import bcq
-# from TD3_BC import td3_bc
+from RL_models.CQL import cql
+# from RL_models.BCQ import bcq
+# from RL_models.TD3_BC import td3_bc
 
 # Initialise the agent
 agent = cql(
@@ -110,9 +110,9 @@ agent.train_model()
 # TEST THE MODEL ---------------------------
 
 from utils import get_params
-from CQL import cql
-from BCQ import bcq
-# from TD3_BC import td3_bc
+from RL_models.CQL import cql
+# from RL_models.BCQ import bcq
+# from RL_models.TD3_BC import td3_bc
 
 # Initialise the agent]
 agent = cql(

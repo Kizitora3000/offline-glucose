@@ -352,11 +352,6 @@ class cql:
             trajectories=trajectories, empty_replay=self.memory, data_processing=self.data_processing, sequence_length=self.sequence_length
         )
         
-        print(self.memory[0])
-        print(self.memory[1])
-        exit()
-        
-        
         # update the parameters
         self.action_std = 1.75 * self.bas * 0.25 / (self.action_std / self.bas)
         self.params["state_mean"], self.params["state_std"]  = self.state_mean, self.state_std
