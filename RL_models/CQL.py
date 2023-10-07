@@ -344,7 +344,7 @@ class cql:
         # load the replay buffer
         with open("./Replays/" + self.replay_name + ".txt", "rb") as file:
             trajectories = pickle.load(file)    
-        
+
         # Process the replay --------------------------------------------------
         
         # unpackage the replay
