@@ -17,8 +17,8 @@ type Agent struct {
 
 func NewAgent() *Agent {
 	return &Agent{
-		Nact:     63, // 投与の最大値
-		InitValQ: 0,
+		Nact:     63,    // 投与の最大値
+		InitValQ: 1e-10, // なるべく負の値を小さくするのが目的
 		Epsilon:  0.1,
 		Alpha:    0.1,
 		Gamma:    0.9,
