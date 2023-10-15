@@ -163,3 +163,4 @@ cython_debug/
 
 diabetes_dataset/data-*
 proprocessed_diabetes_dataset/*
+*.json

@@ -20,7 +20,7 @@ Test the learned policy of an agent against the PID algorithm over a
 specified length of time.
 """
 def test_algorithm(env, agent_action, seed=0, max_timesteps=480, sequence_length=80,
-                   data_processing="condensed", pid_run=False, lstm=False, params=None):
+                   data_processing="condensed", pid_run=False, lstm=False, qleaning=False, params=None):
     
     # Unpack the params
     
@@ -108,7 +108,6 @@ def test_algorithm(env, agent_action, seed=0, max_timesteps=480, sequence_length
             
             # Run the RL algorithm ------------------------------------------------------
             if ep == 0:
-                
                 # condense the state
                 if data_processing == "condensed":
                                     
@@ -137,8 +136,11 @@ def test_algorithm(env, agent_action, seed=0, max_timesteps=480, sequence_length
                 # get the action prediction from the model
                 if lstm:
                     action, hidden_in = agent_action(state, prev_action, timestep=timesteps, hidden_in=hidden_in, prev_reward=reward)                    
+                elif qleaning:
+                    action = agent_action(bg_vals[0])
+                    action /= 1000 # 1単位を0.01mlに変換するために1000で割る
                 else:
-                    action = agent_action(state, prev_action, timestep=timesteps, prev_reward=reward)                    
+                    action = agent_action(state, prev_action, timestep=timesteps, prev_reward=reward)                   
                                         
                 # Unnormalise action output  
                 action_pred = (action * action_std + action_mean)[0]
@@ -176,7 +178,7 @@ def test_algorithm(env, agent_action, seed=0, max_timesteps=480, sequence_length
                     correction_factor=cf, 
                     target_blood_glucose=target_blood_glucose
                     ) 
-                                       
+
                 chosen_action = float(chosen_action) + bolus_action
                 
             # Step the environment ------------------------------------------                
@@ -219,7 +221,7 @@ def test_algorithm(env, agent_action, seed=0, max_timesteps=480, sequence_length
             reward_stack = np.vstack([reward_stack, np.array([reward], dtype=np.float32)])
 
             # add a termination penalty
-            if done: 
+            if done:
                 reward = -1e5
                 break
             
@@ -252,7 +254,7 @@ def test_algorithm(env, agent_action, seed=0, max_timesteps=480, sequence_length
             bg_val, state, meal = next_bg_val, next_state, info['meal']
             last_action = player_action
             timesteps += 1 
-            
+
     return rl_reward, rl_blood_glucose, rl_action, rl_insulin, rl_meals, pid_reward, pid_blood_glucose, pid_action
 
 
@@ -265,7 +267,7 @@ def create_graph(rl_reward, rl_blood_glucose, rl_action, rl_insulin, rl_meals,
                  pid_reward, pid_blood_glucose, pid_action, params):
     
     # Unpack the params
-    
+
     # Diabetes
     basal_default = params.get("basal_default")    
     hyper_threshold = params.get("hyper_threshold", 180) 
@@ -429,6 +431,8 @@ def create_graph(rl_reward, rl_blood_glucose, rl_action, rl_insulin, rl_meals,
     # Produce the glucose display graph -----------------------------------------------
     
     # Check that the rl algorithm completed the full episode
+    print(len(pid_blood_glucose))
+    print(len(rl_blood_glucose))
     if len(pid_blood_glucose) == len(rl_blood_glucose):        
         
         # Plot insulin actions alongside blood glucose ------------------------------

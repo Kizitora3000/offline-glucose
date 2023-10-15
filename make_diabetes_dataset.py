@@ -208,7 +208,7 @@ def check_error(df):
             issues_found_new.append((i, df.iloc[i], df.iloc[i + 1]))
     return issues_found_new
 
-def calculate_risk(blood_glucose):
+def ccalculate_risk(blood_glucose):
     return 10 * math.pow((3.5506 * (math.pow(math.log(max(1, blood_glucose)), 0.8353) - 3.7932)), 2)   
 
 def sum_values(val):
