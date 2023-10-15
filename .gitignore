@@ -162,5 +162,5 @@ cython_debug/
 #.idea/
 
 diabetes_dataset/data-*
-proprocessed_diabetes_dataset/*
+proprocessed_diabetes_SRL_dataset/*
 *.json

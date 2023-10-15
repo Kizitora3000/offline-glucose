@@ -208,7 +208,7 @@ def check_error(df):
             issues_found_new.append((i, df.iloc[i], df.iloc[i + 1]))
     return issues_found_new
 
-def ccalculate_risk(blood_glucose):
+def calculate_risk(blood_glucose):
     return 10 * math.pow((3.5506 * (math.pow(math.log(max(1, blood_glucose)), 0.8353) - 3.7932)), 2)   
 
 def sum_values(val):
@@ -250,4 +250,4 @@ if __name__ == "__main__":
         new_df = pd.DataFrame(new_data, columns=["s1", "a1", "r1", "s2"])
         new_df['a1'] = new_df['a1'].apply(sum_values)
         
-        new_df.to_csv("./proprocessed_diabetes_dataset/" + file_name + ".csv")
+        new_df.to_csv("./proprocessed_diabetes_SRL_dataset/" + file_name + ".csv")
