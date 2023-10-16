@@ -138,7 +138,7 @@ def test_algorithm(env, agent_action, seed=0, max_timesteps=480, sequence_length
                     action, hidden_in = agent_action(state, prev_action, timestep=timesteps, hidden_in=hidden_in, prev_reward=reward)                    
                 elif qleaning:
                     action = agent_action(bg_vals[0])
-                    action /= 1000 # 1単位を0.01mlに変換するために1000で割る
+                    action /= 100 # 1単位を0.01mlに変換するために1000で割る
                 else:
                     action = agent_action(state, prev_action, timestep=timesteps, prev_reward=reward)                   
                                         

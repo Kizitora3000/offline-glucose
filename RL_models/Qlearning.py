@@ -8,7 +8,7 @@ from collections import deque
 from utils import test_algorithm, create_graph, unpackage_replay
 
 class qlearning:
-    def __init__(self, init_seed, patient_params, params):
+    def __init__(self, init_seed, patient_params, params, data_file_path):
         # ENVIRONMENT
         self.params = params
         self.env_name = patient_params["env_name"]       
@@ -56,7 +56,7 @@ class qlearning:
         self.memory_size = self.training_timesteps 
         self.memory = deque(maxlen=self.memory_size)
 
-        with open("data.json", 'r') as f:
+        with open(data_file_path, 'r') as f:
             self.Qtable = json.load(f)
 
     def select_action(self, state):
@@ -64,8 +64,8 @@ class qlearning:
         # 最大値を取得
         max_val = max(self.Qtable[state])
 
-        # 最大値が1e-10であればランダムなインデックスを返す
-        if max_val == 1e-10:
+        # 最大値が-1e10であればランダムなインデックスを返す
+        if max_val == -1e10:
             return np.random.choice(len(self.Qtable[state]))
 
         # 最大値のインデックスを取得
