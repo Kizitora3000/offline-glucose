@@ -208,8 +208,7 @@ def check_error(df):
             issues_found_new.append((i, df.iloc[i], df.iloc[i + 1]))
     return issues_found_new
 
-# S. Yasini, M. B. Naghibi-Sistani and A. Karimpour, 2009
-def reward_function(blood_glucose):
+def calculate_risk(blood_glucose):
     return -abs(blood_glucose - 80)
 
 def sum_values(val):
@@ -243,7 +242,7 @@ if __name__ == "__main__":
         for i in range(0, len(df) - 1, 2):
             s1 = df.iloc[i][3]
             a1 = df.iloc[i + 1][3]
-            r1 = reward_function(float(s1))
+            r1 = calculate_risk(float(s1))
             s2 = df.iloc[i + 2][3] if i + 2 < len(df) else None
             
             new_data.append([s1, a1, r1, s2])

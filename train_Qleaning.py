@@ -54,8 +54,9 @@ agent = qlearning(
     init_seed=0,
     patient_params=patient_params,
     params=params,
-    # data_file_path="srl_data.json"
-    data_file_path="rl_data.json"
+    data_file_path="srl_data.json"
+    # data_file_path="pprl_srl_data.json"
+    # data_file_path="pprl_rl_data.json"
 )
 
 # Train the agent
