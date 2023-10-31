@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from collections import deque
 from utils import test_algorithm, create_graph, unpackage_replay
+from utils.evaluation import create_only_BG_graph
 
 class qlearning:
     def __init__(self, init_seed, patient_params, params, data_file_path):
@@ -106,8 +107,42 @@ class qlearning:
         )
          
         # display the results
-        create_graph(
+        # create_graph(
+        create_only_BG_graph(
             rl_reward=rl_reward, rl_blood_glucose=rl_bg, rl_action=rl_action, rl_insulin=rl_insulin,
             rl_meals=rl_meals, pid_reward=pid_reward, pid_blood_glucose=pid_bg, 
             pid_action=pid_action, params=self.params
-        ) 
+        )
+
+    def calc_rl_blood_glucose(self, input_seed=0, input_max_timesteps=4800):
+        # TESTING -------------------------------------------------------------------------------------------- 
+        
+        # initialise the environment
+        env = gym.make(self.env_name)  
+
+        # load the replay buffer
+        with open("./Replays/" + self.replay_name + ".txt", "rb") as file:
+            trajectories = pickle.load(file)  
+        
+        # Process the replay --------------------------------------------------
+
+        # unpackage the replay
+        self.memory, self.state_mean, self.state_std, self.action_mean, self.action_std, _, _ = unpackage_replay(
+            trajectories=trajectories, empty_replay=self.memory, data_processing=self.data_processing, sequence_length=self.sequence_length
+        )
+
+        # update the parameters
+        self.action_std = 1.75 * self.bas * 0.25 / (self.action_std / self.bas)
+        self.params["state_mean"], self.params["state_std"]  = self.state_mean, self.state_std
+        self.params["action_mean"], self.params["action_std"] = self.action_mean, self.action_std
+        
+        test_seed, max_timesteps = input_seed, input_max_timesteps
+
+        # test the algorithm's performance vs pid algorithm
+        rl_reward, rl_bg, rl_action, rl_insulin, rl_meals, pid_reward, pid_bg, pid_action = test_algorithm(
+            env=env, agent_action=self.select_action, seed=test_seed, max_timesteps=max_timesteps,
+            sequence_length=self.sequence_length, data_processing=self.data_processing, 
+            pid_run=False, params=self.params, qleaning=True
+        )
+
+        return rl_bg
