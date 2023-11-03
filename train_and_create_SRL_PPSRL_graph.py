@@ -37,15 +37,15 @@ def create_only_BG_graph(rl_blood_glucose1, rl_blood_glucose2, rl_blood_glucose3
     x = list(range(len(rl_blood_glucose1)))
     
     plt.rcParams['font.family'] = 'MS Gothic'
-    plt.rcParams['font.size'] = 20
+    # plt.rcParams['font.size'] = 14
 
     # Initialise the plot and specify the title
     fig = plt.figure(dpi=160)
     
     # define the hypo, eu and hyper regions
-    plt.axhspan(180, 300, color='lightcoral', alpha=0.6, lw=0)
+    # plt.axhspan(180, 300, color='lightcoral', alpha=0.6, lw=0)
     plt.axhspan(70, 180, color='#c1efc1', alpha=1.0, lw=0)
-    plt.axhspan(0, 70, color='lightcoral', alpha=0.6, lw=0)
+    plt.axhspan(0, 70, color='skyblue', alpha=0.6, lw=0)
     
     # plot the blood glucose values
     plt.plot(x, rl_blood_glucose2, label='PPRL SRL',
@@ -53,10 +53,10 @@ def create_only_BG_graph(rl_blood_glucose1, rl_blood_glucose2, rl_blood_glucose3
     plt.plot(x, rl_blood_glucose1, label='SRL',
              color='darkorange', alpha=0.8, linestyle="dashed")
     #plt.plot(x, rl_blood_glucose3, label='PPRL RL', color='dodgerblue', alpha=0.8, linestyle = "solid")
-    plt.legend()
+    # plt.legend()
     
     # specify the limits and the axis labels
-    plt.axis(ymin=50, ymax=300)
+    plt.axis(ymin=50, ymax=280)
     plt.axis(xmin=0.0, xmax=len(rl_blood_glucose1))
     plt.ylabel("血糖値 (mg/dL)")
     plt.xlabel("時間 (分)")
