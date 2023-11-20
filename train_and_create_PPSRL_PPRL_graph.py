@@ -37,29 +37,36 @@ def create_only_BG_graph(rl_blood_glucose1, rl_blood_glucose2, rl_blood_glucose3
     x = list(range(len(rl_blood_glucose1)))
     
     plt.rcParams['font.family'] = 'MS Gothic'
-    # plt.rcParams['font.size'] = 14
+    plt.rcParams['font.size'] = 16
 
     # Initialise the plot and specify the title
     fig = plt.figure(dpi=160)
     
     # define the hypo, eu and hyper regions
     # plt.axhspan(180, 300, color='lightcoral', alpha=0.6, lw=0)
-    plt.axhspan(70, 180, color='#c1efc1', alpha=1.0, lw=0)
+    # plt.axhspan(70, 180, color='#c1efc1', alpha=1.0, lw=0)
     plt.axhspan(0, 70, color='skyblue', alpha=0.6, lw=0)
     
     # plot the blood glucose values
     # plt.plot(x, rl_blood_glucose1, label='SRL', color='darkorange', alpha=1, linestyle = "dashed")
-    plt.plot(x, rl_blood_glucose2, label='PPRL SRL', color='blueviolet', alpha=1, linestyle = "solid")
-    plt.plot(x, rl_blood_glucose3, label='PPRL RL', color='dodgerblue', alpha=0.8, linestyle = "dashed")
-    # plt.legend()
+    plt.plot(x, rl_blood_glucose2, label='PPSRL', color='darkblue', alpha=1, linestyle = "solid")
+    plt.plot(x, rl_blood_glucose3, label='PPRL', color='#fa5502', alpha=0.8, linestyle = "dashed")
+    plt.legend(ncol=2) # forestgreen limegreen #ff8400 #fa5502
     
     # specify the limits and the axis labels
     plt.axis(ymin=50, ymax=280)
     plt.axis(xmin=0.0, xmax=len(rl_blood_glucose1))
-    plt.ylabel("血糖値 (mg/dL)")
-    plt.xlabel("時間 (分)")
+    plt.ylabel("blood glucose level [mg/dL]")
+    plt.xlabel("time [day]")
     # plt.title('各方策における血糖値制御結果')
-    
+
+    positions = range(0, len(rl_blood_glucose1) + 1, 480)
+    labels = [str(int(pos/480)) for pos in positions] # 実際の位置を20で割ってラベルを作成
+    # 横軸の目盛りをカスタマイズ
+    plt.xticks(positions, labels)
+
+    # plt.subplots_adjust(left=0.1, right=0.97, top=0.96, bottom=0.15)
+    plt.subplots_adjust(left=0.1, right=0.98, top=0.97, bottom=0.15)
     plt.show()
 
 # Get the parameters for a specified patient
