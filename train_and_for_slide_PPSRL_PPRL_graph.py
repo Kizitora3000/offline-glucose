@@ -37,7 +37,7 @@ def create_only_BG_graph(rl_blood_glucose1, rl_blood_glucose2, rl_blood_glucose3
     x = list(range(len(rl_blood_glucose1)))
     
     plt.rcParams['font.family'] = 'MS Gothic'
-    plt.rcParams['font.size'] = 16
+    plt.rcParams['font.size'] = 28
     
     # define the hypo, eu and hyper regions
     # plt.axhspan(180, 300, color='lightcoral', alpha=0.6, lw=0)
@@ -46,9 +46,9 @@ def create_only_BG_graph(rl_blood_glucose1, rl_blood_glucose2, rl_blood_glucose3
     
     # plot the blood glucose values
     # plt.plot(x, rl_blood_glucose1, label='SRL', color='darkorange', alpha=1, linestyle = "dashed")
-    plt.plot(x, rl_blood_glucose2, label='リスク関数を用いたプライバシ保護安全強化学習', color='darkblue', alpha=1, linestyle = "solid")
+    plt.plot(x, rl_blood_glucose2, label='リスク関数を用いたプライバシ保護安全強化学習', color='darkblue', alpha=1, linestyle = "solid", linewidth=3.0)
     # forestgreen limegreen #ff8400 #fa5502
-    plt.plot(x, rl_blood_glucose3, label='プライバシ保護強化学習', color='#fa5502', alpha=0.8, linestyle = "dashed")
+    plt.plot(x, rl_blood_glucose3, label='プライバシ保護強化学習', color='#fa5502', alpha=0.8, linestyle = "dashed", linewidth=3.0)
     plt.legend()
     
     # specify the limits and the axis labels
