@@ -45,12 +45,12 @@ def create_only_BG_graph(rl_blood_glucose1, rl_blood_glucose2, rl_blood_glucose3
     # plt.axhspan(0, 70, color='skyblue', alpha=0.6, lw=0)
     
     # plot the blood glucose values
-    plt.plot(x, rl_blood_glucose2, label='リスク関数を用いたプライバシ保護安全強化学習',
-             color='darkblue', alpha=1, linestyle="solid", linewidth=4.0)
-    plt.plot(x, rl_blood_glucose1, label='リスク関数を用いた安全強化学習',
-             color='red', alpha=0.8, linestyle="dashed", linewidth=4.0)
+    line1 = plt.plot(x, rl_blood_glucose2, label='リスク関数を用いたプライバシ保護安全強化学習',
+             color='darkblue', alpha=1, linestyle="solid", linewidth=3.0)
+    line2 = plt.plot(x, rl_blood_glucose1, label='リスク関数を用いた安全強化学習',
+             color='red', alpha=0.8, linestyle="dashed", linewidth=3.0)
     #plt.plot(x, rl_blood_glucose3, label='PPRL RL', color='dodgerblue', alpha=0.8, linestyle = "solid")
-    plt.legend()
+    plt.legend([line2[0], line1[0]], ['リスク関数を用いた安全強化学習', 'リスク関数を用いたプライバシ保護安全強化学習'])
 
     # specify the limits and the axis labels
     plt.axis(ymin=50, ymax=280)
