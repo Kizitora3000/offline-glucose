@@ -3,6 +3,12 @@
 import numpy as np
 from RL_models.BCQ_of_UCI_diabetes import BCQ_of_UCI_diabetes
 from utils import create_env
+import argparse
+
+# set args (i.g. python train_BCQ_of_diabetes.py 100000)
+parser = argparse.ArgumentParser(description='Train BCQ model with given ID.')
+parser.add_argument('id', type=int, help='ID for the training session')
+args = parser.parse_args()
 
 # Set the parameters for the meal scenario
 prob = [0.95, 0.1, 0.95, 0.1, 0.95, 0.1]
@@ -50,13 +56,18 @@ import torch
 if torch.cuda.is_available():
     params["device"] = "cuda"
 
+id = args.id
+qpath = f"./jsons/bcq_data_{id}.json"
+mpath = f"./jsons/bcq_data_{id}_BCQ_weights"
+
 agent = BCQ_of_UCI_diabetes(
     init_seed=0,
     patient_params=patient_params,
     params=params,
-    qtable_path="bcq_data_10000.json",
-    model_path="BCQ_weights"
+    qtable_path=qpath,
+    model_path=mpath
 )
 
 # Train the agent
-agent.test_model()
+rl_reward = agent.test_model()
+print(rl_reward)

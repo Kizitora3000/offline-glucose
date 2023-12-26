@@ -83,12 +83,12 @@ class BCQ_of_UCI_diabetes:
 
         state_dim = 1
         num_actions=63
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device ="cpu"
         self.model = FC_Q(state_dim, num_actions).to(self.device)
         self.model.load_state_dict(torch.load(model_path))
 
     def select_action(self, state):
-        """
+        
         state = int(state)
         # 最大値を取得
         max_val = max(self.Qtable[state])
@@ -102,7 +102,10 @@ class BCQ_of_UCI_diabetes:
         
         # 最大値が複数存在する場合、ランダムに1つのインデックスを選ぶ
         # return np.random.choice(max_indices)
-        """
+
+        indexed_values = [(i, val) for i, val in enumerate(self.Qtable[state])]
+        indexed_values.sort(key=lambda x: x[1], reverse=True)
+        top_indices = [indexed_values[i][0] for i in range(min(15, len(indexed_values)))]
 
         state_int = int(state)
         state = torch.tensor([[state]], dtype=torch.float32)
@@ -113,7 +116,8 @@ class BCQ_of_UCI_diabetes:
         imt = (imt/imt.max(1, keepdim=True)[0] > threshold).float()
         # Use large negative number to mask actions from argmax
         action = (imt * q + (1. - imt) * -1e8).argmax(1)
-
+        #print(top_indices)
+        #print(state_int, max_indices, action)
         return action.item()
 
 
@@ -150,11 +154,15 @@ class BCQ_of_UCI_diabetes:
          
         # display the results
         # create_graph(
+        """
         create_only_BG_graph(
             rl_reward=rl_reward, rl_blood_glucose=rl_bg, rl_action=rl_action, rl_insulin=rl_insulin,
             rl_meals=rl_meals, pid_reward=pid_reward, pid_blood_glucose=pid_bg, 
             pid_action=pid_action, params=self.params
         )
+        """
+
+        return rl_reward
 
     def calc_rl_blood_glucose(self, input_seed=0, input_max_timesteps=4800):
         # TESTING -------------------------------------------------------------------------------------------- 
