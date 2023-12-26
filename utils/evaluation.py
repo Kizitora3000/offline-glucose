@@ -19,7 +19,7 @@ from .general import PID_action, calculate_bolus, calculate_risk, is_in_range
 Test the learned policy of an agent against the PID algorithm over a 
 specified length of time.
 """
-def test_algorithm(env, agent_action, seed=0, max_timesteps=480, sequence_length=80,
+def test_algorithm(env, agent_action, seed=0, max_timesteps=4800, sequence_length=80,
                    data_processing="condensed", pid_run=False, lstm=False, qleaning=False, params=None):
     
     # Unpack the params
