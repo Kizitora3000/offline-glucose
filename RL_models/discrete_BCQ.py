@@ -1,3 +1,4 @@
+import gym
 import random
 import copy
 import numpy as np
@@ -121,6 +122,7 @@ class discrete_BCQ(object):
 		self.iterations = 0
 		
 		self.params = params
+		self.env_name = patient_params["env_name"]
 		self.bas = patient_params["u2ss"] * (patient_params["BW"] / 6000) * 3
 		self.sequence_length = 80   
 		self.data_processing = "condensed" 
@@ -130,17 +132,18 @@ class discrete_BCQ(object):
 		self.memory = deque(maxlen=self.memory_size)  
 
 
-	def select_action(self, state, eval=False):
+	def select_action(self, state, action, timestep, prev_reward):
 		# Select action according to policy with probability (1-eps)
 		# otherwise, select random action
 		if np.random.uniform(0,1) > self.eval_eps:
 			with torch.no_grad():
-				state = torch.FloatTensor(state).reshape(self.state_shape).to(self.device)
+				state = torch.FloatTensor(state).reshape(self.state_shape).to(self.device).int()
+				state = state.float()
 				q, imt, i = self.Q(state)
 				imt = imt.exp()
 				imt = (imt/imt.max(1, keepdim=True)[0] > self.threshold).float()
 				# Use large negative number to mask actions from argmax
-				return int((imt * q + (1. - imt) * -1e8).argmax(1))
+				return int((imt * q + (1. - imt) * -1e8).argmax(1)) # 1単位 = 0.01ml なので 100で割って単位を合わせる
 		else:
 			return np.random.randint(self.num_actions)
 		
@@ -162,7 +165,7 @@ class discrete_BCQ(object):
 		self.params["action_mean"], self.params["action_std"] = self.action_mean, self.action_std 
 		self.max_action = float(((self.bas * 3) - self.action_mean) / self.action_std)
 
-		for t in range(1, 2):
+		for t in range(1, self.training_timesteps + 1):
 			state, action, reward, next_state, done, _, _, _, _, _ = get_discrete_batch(
                 replay=self.memory, batch_size=self.batch_size, 
                 data_processing=self.data_processing, 
@@ -200,6 +203,58 @@ class discrete_BCQ(object):
 			# Update target network by polyak or full copy every X iterations.
 			self.iterations += 1
 			self.maybe_update_target()
+
+			# Show progress
+			if t % self.training_progress_freq == 0:
+                
+                # show the updated loss
+				print('Timesteps {} - Q_loss {}'.format(t, Q_loss))
+	
+				path = f"Models/BCQ_weights_{t}"
+				self.save_model(path)
+
+
+	def test_model(self, state_dim, num_actions, load_path, training=False, input_seed=0, input_max_timesteps=4800):
+        
+        # initialise the environment
+		env = gym.make(self.env_name)
+            
+        # load the replay buffer
+		with open("./Replays/" + self.replay_name + ".txt", "rb") as file:
+			trajectories = pickle.load(file)
+        
+        # Process the replay --------------------------------------------------
+        
+        # unpackage the replay
+			self.memory, self.state_mean, self.state_std, self.action_mean, self.action_std, _, _ = unpackage_replay(
+            trajectories=trajectories, empty_replay=self.memory, data_processing=self.data_processing, sequence_length=self.sequence_length
+        )
+
+        # adding this allows better results?
+		self.action_std = 1.75 * self.bas * 0.25 / (self.action_std / self.bas)
+		self.params["state_mean"], self.params["state_std"]  = self.state_mean, self.state_std
+		self.params["action_mean"], self.params["action_std"] = self.action_mean, self.action_std
+		self.max_action = float(((self.bas * 3) - self.action_mean) / self.action_std)
+		self.Q = FC_Q(state_dim, num_actions).to(self.device) 
+        
+        # load the learned model
+		self.load_model(load_path)
+		test_seed, max_timesteps = input_seed, input_max_timesteps
+        
+        # test the algorithm's performance vs pid algorithm
+        # test the algorithm's performance vs pid algorithm
+		rl_reward, rl_bg, rl_action, rl_insulin, rl_meals, pid_reward, pid_bg, pid_action = test_algorithm(
+            env=env, agent_action=self.select_action, seed=test_seed, max_timesteps=max_timesteps,
+            sequence_length=self.sequence_length, data_processing=self.data_processing, 
+            pid_run=False, discrete_BCQ=True, params=self.params
+        )
+
+        # display the results
+		create_graph(
+            rl_reward=rl_reward, rl_blood_glucose=rl_bg, rl_action=rl_action, rl_insulin=rl_insulin,
+            rl_meals=rl_meals, pid_reward=pid_reward, pid_blood_glucose=pid_bg, 
+            pid_action=pid_action, params=self.params
+        )    
 
 
 	def train(self, replay_buffer):
@@ -261,3 +316,6 @@ class discrete_BCQ(object):
 	
 	def save_model(self, path):
 		torch.save(self.Q.state_dict(), path)
+
+	def load_model(self, path):
+		self.Q.load_state_dict(torch.load(path))

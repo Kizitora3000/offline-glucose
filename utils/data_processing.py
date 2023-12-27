@@ -327,7 +327,6 @@ def get_discrete_batch(replay, batch_size, data_processing="condensed", sequence
     else: reward = torch.FloatTensor(reward).to(device)
     
     if hidden_in[0] is not None and online:
-        print("HELLO")
         # process lstm layers
         if len(hidden_in[0]) > 1:
             layer_in, cell_in = list(zip(*hidden_in))

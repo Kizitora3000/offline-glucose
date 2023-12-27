@@ -108,9 +108,9 @@ parameters = {
     "tau": 0.005
 }
 
-state_dim = params["state_size"]
+state_dim = 11
 num_actions = 63
-device = "cpu"
+device = "cuda"
 BCQ_threshold=0.3
 
 agent = discrete_BCQ(
@@ -134,8 +134,10 @@ agent = discrete_BCQ(
         params=params
 )
 # Train the agent
+print("discrete_BCQ TRAIN START")
 agent.train_model()
-exit()
 
 # Test the agent
-agent.test_model()
+t = 100000
+path = f"Models/BCQ_weights_{t}"
+agent.test_model(state_dim, num_actions, path)

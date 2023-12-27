@@ -20,7 +20,7 @@ Test the learned policy of an agent against the PID algorithm over a
 specified length of time.
 """
 def test_algorithm(env, agent_action, seed=0, max_timesteps=4800, sequence_length=80,
-                   data_processing="condensed", pid_run=False, lstm=False, qleaning=False, params=None):
+                   data_processing="condensed", pid_run=False, lstm=False, qleaning=False, discrete_BCQ=False,params=None):
     
     # Unpack the params
     
@@ -81,7 +81,7 @@ def test_algorithm(env, agent_action, seed=0, max_timesteps=4800, sequence_lengt
         # get a suitable input
         state_stack = np.tile(state, (sequence_length + 1, 1))
         state_stack[:, 3] = (state_stack[:, 3] - np.arange(((sequence_length + 1) / 479), 0, -(1 / 479))[:sequence_length + 1]) * 479            
-        state_stack[:, 3] = (np.around(state_stack[:, 3], 0) % 480) / 479         
+        state_stack[:, 3] = (np.around(state_stack[:, 3], 0) % 480) / 479
 
         # get the action and reward stack
         action_stack = np.tile(np.array([insulin_dose], dtype=np.float32), (sequence_length + 1, 1))        
@@ -130,6 +130,7 @@ def test_algorithm(env, agent_action, seed=0, max_timesteps=4800, sequence_lengt
                     prev_action = action_stack[1:, :].reshape(1, sequence_length)
                                             
                 # Normalise the current state
+                state_not_normalise = state
                 state = (state - state_mean) / state_std
                 prev_action = (prev_action - action_mean) / action_std
                 
@@ -138,7 +139,10 @@ def test_algorithm(env, agent_action, seed=0, max_timesteps=4800, sequence_lengt
                     action, hidden_in = agent_action(state, prev_action, timestep=timesteps, hidden_in=hidden_in, prev_reward=reward)                    
                 elif qleaning:
                     action = agent_action(bg_vals[0])
-                    action /= 100 # 1単位を0.01mlに変換するために1000で割る
+                    action /= 100 # 1単位を0.01mlに変換するために100で割る
+                elif discrete_BCQ:
+                    action = agent_action(state_not_normalise, prev_action, timestep=timesteps, prev_reward=reward)   
+                    action /= 100  # 1単位を0.01mlに変換するために100で割る
                 else:
                     action = agent_action(state, prev_action, timestep=timesteps, prev_reward=reward)                   
                                         
