@@ -250,4 +250,4 @@ if __name__ == "__main__":
         new_df = pd.DataFrame(new_data, columns=["s1", "a1", "r1", "s2"])
         new_df['a1'] = new_df['a1'].apply(sum_values)
         
-        new_df.to_csv("./proprocessed_diabetes_dataset/" + file_name + ".csv")
+        new_df.to_csv("./preprocessed_diabetes_SRL_dataset/" + file_name + ".csv")

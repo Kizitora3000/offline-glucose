@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -20,7 +22,7 @@ func main() {
 		panic(err)
 	}
 
-	mx := 0.0
+	mx_status := 0.0
 	for _, file := range files {
 		filename := filepath.Join(dirname, file.Name())
 		file, err := os.Open(filename)
@@ -47,12 +49,38 @@ func main() {
 			action, _ := strconv.Atoi(record[2])
 			rwd, _ := strconv.ParseFloat(record[3], 64)
 			next_status, _ := strconv.Atoi(record[4])
-			mx = math.Max(mx, float64(action))
+			mx_status = math.Max(mx_status, float64(status))
 
 			Agt.Learn(status, action, rwd, next_status)
 		}
 	}
-	for key, values := range Agt.Q {
-		fmt.Printf("Key: %s, Values: %v\n", key, values)
+
+	/*
+		for key, values := range Agt.Q {
+			fmt.Printf("Key: %s, Values: %v\n", key, values)
+		}
+	*/
+
+	// mx_status × Nact
+	Qtable := make([][]float64, int(mx_status))
+	for i := range Qtable {
+		Qtable[i] = make([]float64, Agt.Nact)
+		for j := range Qtable[i] {
+			Qtable[i][j] = Agt.InitValQ
+		}
+		if _, isExist := Agt.Q[i]; isExist {
+			Qtable[i] = Agt.Q[i]
+		}
+	}
+
+	jsonData, err := json.Marshal(Qtable)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = ioutil.WriteFile("data.json", jsonData, 0644)
+	if err != nil {
+		fmt.Println(err)
 	}
 }

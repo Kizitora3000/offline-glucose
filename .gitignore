@@ -162,4 +162,7 @@ cython_debug/
 #.idea/
 
 diabetes_dataset/data-*
-proprocessed_diabetes_dataset/*
+preprocessed_diabetes_SRL_dataset/*
+preprocessed_diabetes_RL_dataset/*
+*.json
+BCQ_weights
