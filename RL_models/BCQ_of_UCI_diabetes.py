@@ -116,8 +116,7 @@ class BCQ_of_UCI_diabetes:
         imt = (imt/imt.max(1, keepdim=True)[0] > threshold).float()
         # Use large negative number to mask actions from argmax
         action = (imt * q + (1. - imt) * -1e8).argmax(1)
-        #print(top_indices)
-        #print(state_int, max_indices, action)
+        #print(state_int, max_indices, action.item())
         return action.item()
 
 
@@ -154,13 +153,11 @@ class BCQ_of_UCI_diabetes:
          
         # display the results
         # create_graph(
-        """
         create_only_BG_graph(
             rl_reward=rl_reward, rl_blood_glucose=rl_bg, rl_action=rl_action, rl_insulin=rl_insulin,
             rl_meals=rl_meals, pid_reward=pid_reward, pid_blood_glucose=pid_bg, 
             pid_action=pid_action, params=self.params
         )
-        """
 
         return rl_reward
 

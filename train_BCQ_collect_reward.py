@@ -11,7 +11,7 @@ with open('ids.csv', mode='w', newline='') as file:
     writer.writerow(['ID', 'RL_Reward'])
 
     # リソースの都合で同時に10回までしか実行できないので、10回×10回で100回分計算
-    for i in range(2, 10):
+    for i in range(10):
         id = 100000 * i
         # ThreadPoolExecutorを使用して並列実行
         with ThreadPoolExecutor(max_workers=10) as executor:
