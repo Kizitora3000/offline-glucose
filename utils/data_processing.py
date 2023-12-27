@@ -258,4 +258,95 @@ def get_batch(replay, batch_size, data_processing="condensed", sequence_length=8
     done =  done.unsqueeze(-1)
     
     return state, action, reward, next_state, done, timestep, reward_to_go, last_action, hidden_in, hidden_out
-            
+
+
+def get_discrete_batch(replay, batch_size, data_processing="condensed", sequence_length=80, device='cpu', online=True, params=None):
+    
+    # Environment
+    state_size = params.get("state_size")  
+    state_mean = params.get("state_mean")  
+    state_std = params.get("state_std")  
+    action_mean = params.get("action_mean")  
+    action_std = params.get("action_std")  
+    reward_mean = params.get("reward_mean")  
+    reward_std = params.get("reward_std")  
+    reward_scale = params.get("reward_scale", 1.0)
+    
+    # sample a minibatch
+    minibatch = random.sample(replay, batch_size)
+    
+    if data_processing == "condensed":
+        state = np.zeros((batch_size, state_size), dtype=np.float32)
+        action = np.zeros(batch_size, dtype=np.float32)        
+        reward = np.zeros(batch_size, dtype=np.float32)
+        next_state = np.zeros((batch_size, state_size), dtype=np.float32)
+        done = np.zeros(batch_size, dtype=np.uint8)
+        timestep = np.zeros(batch_size, dtype=np.float32)
+        reward_to_go = np.zeros(batch_size, dtype=np.float32)
+        
+        last_action = np.zeros(batch_size, dtype=np.float32) 
+        hidden_in = [0] * batch_size
+        hidden_out = [0] * batch_size
+                
+    elif data_processing == "sequence": 
+        
+        state = np.zeros((batch_size, sequence_length, state_size), dtype=np.float32)
+        action = np.zeros((batch_size, sequence_length), dtype=np.float32)        
+        reward = np.zeros((batch_size, sequence_length), dtype=np.float32)
+        next_state = np.zeros((batch_size, sequence_length, state_size), dtype=np.float32)
+        done = np.zeros((batch_size, sequence_length), dtype=np.uint8)   
+        timestep = np.zeros((batch_size, sequence_length), dtype=np.float32)
+        reward_to_go = np.zeros((batch_size, sequence_length), dtype=np.float32)        
+        last_action = np.zeros((batch_size, sequence_length), dtype=np.float32)    
+        hidden_in = [0] * batch_size
+        hidden_out = [0] * batch_size
+    
+    # unpack the batch
+    for i in range(len(minibatch)):
+        state[i], action[i], reward[i], next_state[i], done[i], timestep[i], reward_to_go[i], last_action[i], hidden_in[i], hidden_out[i] = minibatch[i]      
+
+    # convert to torch
+    # 離散化して整数にするので標準化しない
+    # state = torch.FloatTensor((state - state_mean) / state_std).to(device)
+    # action = torch.FloatTensor((action - action_mean) / action_std).to(device)
+    # next_state = torch.FloatTensor((next_state - state_mean) / state_std).to(device)
+
+    state = torch.tensor(state, dtype=torch.int64).to(device)
+    action = np.where(action < 0, 0, action)
+    action = torch.tensor(action * 100, dtype=torch.int64).to(device)
+    next_state = torch.tensor(next_state, dtype=torch.int64).to(device)
+    state = state.float()
+    next_state = next_state.float()
+    last_action = torch.FloatTensor((last_action - action_mean) / action_std).to(device)    
+    done = torch.FloatTensor(1 - done).to(device)
+    reward_to_go = torch.FloatTensor(reward_to_go / reward_scale).to(device)
+    timestep = torch.tensor(timestep, dtype=torch.int32).to(device)
+    
+    # get norm of reward
+    if reward_mean: reward = torch.FloatTensor(reward_scale * (reward - reward_mean) / reward_std).to(device)
+    else: reward = torch.FloatTensor(reward).to(device)
+    
+    if hidden_in[0] is not None and online:
+        print("HELLO")
+        # process lstm layers
+        if len(hidden_in[0]) > 1:
+            layer_in, cell_in = list(zip(*hidden_in))
+            layer_out, cell_out = list(zip(*hidden_out))
+            layer_in, cell_in = torch.cat(layer_in, 1).to(device).detach(), torch.cat(cell_in, 1).to(device).detach()
+            layer_out, cell_out = torch.cat(layer_out, 1).to(device).detach(), torch.cat(cell_out, 1).to(device).detach()
+            hidden_in, hidden_out = (layer_in, cell_in), (layer_out, cell_out)
+        
+        # process gru layers
+        else:
+            layer_in = torch.cat(hidden_in, 1).to(device).detach()
+            layer_out = torch.cat(hidden_out, 1).to(device).detach()        
+            hidden_in, hidden_out = layer_in, layer_out
+                
+    # Modify Dimensions
+    action = action.unsqueeze(-1)
+    last_action = last_action.unsqueeze(-1)
+    reward = reward.unsqueeze(-1)
+    reward_to_go = reward_to_go.unsqueeze(-1)
+    done =  done.unsqueeze(-1)
+    
+    return state, action, reward, next_state, done, timestep, reward_to_go, last_action, hidden_in, hidden_out

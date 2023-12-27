@@ -38,7 +38,7 @@ bas = patient_params["u2ss"] * (patient_params["BW"] / 6000) * 3
 params = {
     
     # Environmental
-    "state_size": 3,
+    "state_size": 11,
     "basal_default": bas, 
     "target_blood_glucose": 144.0 ,
     "days": 10,    
@@ -65,6 +65,7 @@ import gym
 # initialise the environment
 env = gym.make(patient_params["env_name"])
 
+"""
 # Fill the replay
 full_replay = fill_replay_split(
     env=env, 
@@ -75,6 +76,7 @@ full_replay = fill_replay_split(
     seed=0,
     params=params
 )
+"""
 
 # TRAIN THE MODEL ---------------------------
 
@@ -106,14 +108,16 @@ parameters = {
     "tau": 0.005
 }
 
-state_dim = 1
+state_dim = params["state_size"]
 num_actions = 63
 device = "cpu"
+BCQ_threshold=0.3
 
-agent = discrete_BCQ.discrete_BCQ(
+agent = discrete_BCQ(
 		num_actions,
 		state_dim,
 		device,
+		BCQ_threshold,
 		parameters["discount"],
 		parameters["optimizer"],
 		parameters["optimizer_parameters"],
@@ -123,11 +127,15 @@ agent = discrete_BCQ.discrete_BCQ(
 		parameters["initial_eps"],
 		parameters["end_eps"],
 		parameters["eps_decay_period"],
-		parameters["eval_eps"]
+		parameters["eval_eps"],
+        parameters["batch_size"],
+        init_seed=1,
+        patient_params=patient_params,
+        params=params
 )
-
 # Train the agent
 agent.train_model()
+exit()
 
 # Test the agent
 agent.test_model()

@@ -1,9 +1,13 @@
+import random
 import copy
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from collections import deque
+import pickle
+from utils import unpackage_replay, get_batch, test_algorithm, create_graph
+from utils.data_processing import get_discrete_batch
 
 # Used for Atari
 class Conv_Q(nn.Module):
@@ -72,12 +76,24 @@ class discrete_BCQ(object):
 		end_eps = 0.001,
 		eps_decay_period = 25e4,
 		eval_eps=0.001,
+		batch_size=100,
+		init_seed=1,
+        patient_params=None,
+        params=None
 	):
 	
-		self.device = device
+		self.device = device 
+		self.replay_name = patient_params["replay_name"]
+		self.batch_size = batch_size
+
+        # SEEDING
+		self.train_seed = init_seed
+		np.random.seed(self.train_seed)
+		torch.manual_seed(self.train_seed)  
+		random.seed(self.train_seed)
 
 		# Determine network type
-		self.Q = Conv_Q(state_dim[0], num_actions).to(self.device) if is_atari else FC_Q(state_dim, num_actions).to(self.device)
+		self.Q = FC_Q(state_dim, num_actions).to(self.device)
 		self.Q_target = copy.deepcopy(self.Q)
 		self.Q_optimizer = getattr(torch.optim, optimizer)(self.Q.parameters(), **optimizer_parameters)
 
@@ -94,7 +110,7 @@ class discrete_BCQ(object):
 		self.slope = (self.end_eps - self.initial_eps) / eps_decay_period
 
 		# Evaluation hyper-parameters
-		self.state_shape = (-1,) + state_dim if is_atari else (-1, state_dim)
+		self.state_shape = (-1, state_dim)
 		self.eval_eps = eval_eps
 		self.num_actions = num_actions
 
@@ -103,6 +119,15 @@ class discrete_BCQ(object):
 
 		# Number of training iterations
 		self.iterations = 0
+		
+		self.params = params
+		self.bas = patient_params["u2ss"] * (patient_params["BW"] / 6000) * 3
+		self.sequence_length = 80   
+		self.data_processing = "condensed" 
+		self.training_timesteps = params["training_timesteps"]
+		self.training_progress_freq = int(self.training_timesteps // 10)
+		self.memory_size = self.training_timesteps 
+		self.memory = deque(maxlen=self.memory_size)  
 
 
 	def select_action(self, state, eval=False):
@@ -118,6 +143,63 @@ class discrete_BCQ(object):
 				return int((imt * q + (1. - imt) * -1e8).argmax(1))
 		else:
 			return np.random.randint(self.num_actions)
+		
+
+	def train_model(self):
+		with open("./Replays/" + self.replay_name + ".txt", "rb") as file:
+			trajectories = pickle.load(file)
+            
+        # Process the replay --------------------------------------------------
+        
+        # unpackage the replay
+		self.memory, self.state_mean, self.state_std, self.action_mean, self.action_std, _, _ = unpackage_replay(
+            trajectories=trajectories, empty_replay=self.memory, data_processing=self.data_processing, sequence_length=self.sequence_length
+        )
+                
+        # update the parameters
+		self.action_std = 1.75 * self.bas * 0.25 / (self.action_std / self.bas)
+		self.params["state_mean"], self.params["state_std"]  = self.state_mean, self.state_std
+		self.params["action_mean"], self.params["action_std"] = self.action_mean, self.action_std 
+		self.max_action = float(((self.bas * 3) - self.action_mean) / self.action_std)
+
+		for t in range(1, 2):
+			state, action, reward, next_state, done, _, _, _, _, _ = get_discrete_batch(
+                replay=self.memory, batch_size=self.batch_size, 
+                data_processing=self.data_processing, 
+                sequence_length=self.sequence_length, device=self.device, 
+                params=self.params
+            )
+
+			with torch.no_grad():
+				q, imt, i = self.Q(next_state)
+				imt = imt.exp()
+				imt = (imt/imt.max(1, keepdim=True)[0] > self.threshold).float()
+
+				# Use large negative number to mask actions from argmax
+				# perturbation model (摂動モデル)
+				next_action = (imt * q + (1 - imt) * -1e8).argmax(1, keepdim=True)
+
+				q, imt, i = self.Q_target(next_state)
+				target_Q = reward + done * self.discount * q.gather(1, next_action).reshape(-1, 1)
+
+			# Get current Q estimate
+			current_Q, imt, i = self.Q(state)
+			current_Q = current_Q.gather(1, action)
+
+			# Compute Q loss
+			q_loss = F.smooth_l1_loss(current_Q, target_Q)
+			i_loss = F.nll_loss(imt, action.reshape(-1))
+
+			Q_loss = q_loss + i_loss + 1e-2 * i.pow(2).mean()
+
+			# Optimize the Q
+			self.Q_optimizer.zero_grad()
+			Q_loss.backward()
+			self.Q_optimizer.step()
+
+			# Update target network by polyak or full copy every X iterations.
+			self.iterations += 1
+			self.maybe_update_target()
 
 
 	def train(self, replay_buffer):
