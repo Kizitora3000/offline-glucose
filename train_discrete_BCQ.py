@@ -1,4 +1,10 @@
 import os
+import argparse
+
+# set args (i.g. python train_BCQ_of_diabetes.py 100000)
+parser = argparse.ArgumentParser(description='Train BCQ model with given ID.')
+parser.add_argument('id', type=int, nargs='?', default=None, help='ID for the training session')
+args = parser.parse_args()
 
 directory_path1 = './Replays'
 if not os.path.exists(directory_path1):
@@ -108,7 +114,7 @@ parameters = {
     "tau": 0.005
 }
 
-state_dim = 11
+state_dim = 5
 num_actions = 63
 device = "cuda"
 BCQ_threshold=0.3
@@ -133,11 +139,20 @@ agent = discrete_BCQ(
         patient_params=patient_params,
         params=params
 )
-# Train the agent
-print("discrete_BCQ TRAIN START")
-agent.train_model()
 
-# Test the agent
-t = 100000
-path = f"Models/BCQ_weights_{t}"
-agent.test_model(state_dim, num_actions, path)
+# 引数がない場合は学習を行う
+if args.id is None:
+    # Train the agent
+    print("discrete_BCQ TRAIN START")
+    agent.train_model()
+# 引数としてIDが指定された場合は、対応した学習データの評価を行う
+else:
+    # Test the agent
+    if args.id % 10000 != 0:
+        print("正しいIDを入力してください")
+        exit()
+
+    show_result = True
+    path = f"Models/BCQ_weights_{args.id}_{state_dim}"
+    rl_reward = agent.test_model(path, show_result)
+    print(rl_reward)

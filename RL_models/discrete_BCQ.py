@@ -1,3 +1,4 @@
+import time
 import gym
 import random
 import copy
@@ -86,6 +87,8 @@ class discrete_BCQ(object):
 		self.device = device 
 		self.replay_name = patient_params["replay_name"]
 		self.batch_size = batch_size
+		self.state_dim = state_dim
+		self.num_actions = num_actions
 
         # SEEDING
 		self.train_seed = init_seed
@@ -94,7 +97,7 @@ class discrete_BCQ(object):
 		random.seed(self.train_seed)
 
 		# Determine network type
-		self.Q = FC_Q(state_dim, num_actions).to(self.device)
+		self.Q = FC_Q(self.state_dim, num_actions).to(self.device)
 		self.Q_target = copy.deepcopy(self.Q)
 		self.Q_optimizer = getattr(torch.optim, optimizer)(self.Q.parameters(), **optimizer_parameters)
 
@@ -111,7 +114,7 @@ class discrete_BCQ(object):
 		self.slope = (self.end_eps - self.initial_eps) / eps_decay_period
 
 		# Evaluation hyper-parameters
-		self.state_shape = (-1, state_dim)
+		self.state_shape = (-1, self.state_dim)
 		self.eval_eps = eval_eps
 		self.num_actions = num_actions
 
@@ -133,6 +136,7 @@ class discrete_BCQ(object):
 
 
 	def select_action(self, state, action, timestep, prev_reward):
+		state = state[:self.state_dim]
 		# Select action according to policy with probability (1-eps)
 		# otherwise, select random action
 		if np.random.uniform(0,1) > self.eval_eps:
@@ -149,6 +153,8 @@ class discrete_BCQ(object):
 		
 
 	def train_model(self):
+		start_time = time.time()  # 学習開始時刻を記録
+
 		with open("./Replays/" + self.replay_name + ".txt", "rb") as file:
 			trajectories = pickle.load(file)
             
@@ -172,6 +178,10 @@ class discrete_BCQ(object):
                 sequence_length=self.sequence_length, device=self.device, 
                 params=self.params
             )
+
+			# 最後から2列を削除して[100, 9]にする
+			state = state[:, :self.state_dim]
+			next_state = next_state[:, :self.state_dim]
 
 			with torch.no_grad():
 				q, imt, i = self.Q(next_state)
@@ -205,16 +215,32 @@ class discrete_BCQ(object):
 			self.maybe_update_target()
 
 			# Show progress
-			if t % self.training_progress_freq == 0:
-                
+			if t % self.training_progress_freq == 0:		
+				elapsed_time = time.time() - start_time  # 経過時間を計算
+				avg_time_per_step = elapsed_time / t  # 1ステップあたりの平均時間
+				remaining_steps = self.training_timesteps - t  # 残りのステップ数
+				estimated_remaining_time = avg_time_per_step * remaining_steps  # 残りの時間を予測
+
+				# 残りの時間を分と秒に変換
+				remaining_minutes = int(estimated_remaining_time // 60)
+				remaining_seconds = int(estimated_remaining_time % 60)
+
+                # 終了予定時刻を計算
+				estimated_end_time = time.time() + estimated_remaining_time
+				end_time_struct = time.localtime(estimated_end_time)
+				end_time_str = time.strftime('%Y-%m-%d %H:%M:%S', end_time_struct)
+
+                # 進捗と残り時間を表示
+				print(f'\r進捗: {t}/{self.training_timesteps} - 終了予定時刻: {end_time_str}')
+
                 # show the updated loss
 				print('Timesteps {} - Q_loss {}'.format(t, Q_loss))
 	
-				path = f"Models/BCQ_weights_{t}"
+				path = f"Models/BCQ_weights_{t}_{self.state_dim}"
 				self.save_model(path)
 
 
-	def test_model(self, state_dim, num_actions, load_path, training=False, input_seed=0, input_max_timesteps=4800):
+	def test_model(self, load_path, show_result, training=False, input_seed=0, input_max_timesteps=4800):
         
         # initialise the environment
 		env = gym.make(self.env_name)
@@ -235,7 +261,7 @@ class discrete_BCQ(object):
 		self.params["state_mean"], self.params["state_std"]  = self.state_mean, self.state_std
 		self.params["action_mean"], self.params["action_std"] = self.action_mean, self.action_std
 		self.max_action = float(((self.bas * 3) - self.action_mean) / self.action_std)
-		self.Q = FC_Q(state_dim, num_actions).to(self.device) 
+		self.Q = FC_Q(self.state_dim, self.num_actions).to(self.device) 
         
         # load the learned model
 		self.load_model(load_path)
@@ -249,13 +275,15 @@ class discrete_BCQ(object):
             pid_run=False, discrete_BCQ=True, params=self.params
         )
 
+		if show_result:
         # display the results
-		create_graph(
-            rl_reward=rl_reward, rl_blood_glucose=rl_bg, rl_action=rl_action, rl_insulin=rl_insulin,
-            rl_meals=rl_meals, pid_reward=pid_reward, pid_blood_glucose=pid_bg, 
-            pid_action=pid_action, params=self.params
-        )    
-
+			create_graph(
+				rl_reward=rl_reward, rl_blood_glucose=rl_bg, rl_action=rl_action, rl_insulin=rl_insulin,
+				rl_meals=rl_meals, pid_reward=pid_reward, pid_blood_glucose=pid_bg, 
+				pid_action=pid_action, params=self.params
+			)
+		
+		return rl_reward
 
 	def train(self, replay_buffer):
 		# Sample replay buffer
